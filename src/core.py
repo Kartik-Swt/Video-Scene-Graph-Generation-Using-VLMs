@@ -74,19 +74,8 @@ def select_keyframes(video_path: str,
         cap.release()
     return keyframes
 
-
-class VLMBackend(Protocol):
-    def generate(self, frames_bgr: list[np.ndarray], prompt: str,
-                 max_new_tokens: int = 512) -> str:
-        """Return the raw text the VLM produced for these frames + prompt."""
-        ...
-
-
 class QwenVLBackend:
-    """
-    Real backend using Qwen2.5-VL locally on GPU.
-    Loads lazily so this file imports fine on a machine without the model.
-    """
+
     def __init__(self, model_name: str = "Qwen/Qwen2.5-VL-7B-Instruct",
                  device: str = "cuda", max_pixels: int = 768 * 28 * 28,
                  use_flash_attn: bool = True):
@@ -148,11 +137,6 @@ Return STRICT JSON only, no prose, in exactly this schema:
 {"entities": ["...", "..."],
  "triples": [{"subject": "...", "predicate": "...", "object": "...", "salience": 0.0-1.0}],
  "scene_summary": "one short sentence"}"""
-
-# Path B: a single rich caption per set of frames (cheap semantic baseline).
-CAPTION_PROMPT = """Describe what is happening across these ordered keyframes from
-one short video in 2-3 sentences. Focus on people, their actions, interactions,
-mood, and setting. Be concrete. Return plain text only."""
 
 
 def _extract_json(text: str) -> Optional[dict]:
