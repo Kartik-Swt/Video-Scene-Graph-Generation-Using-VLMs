@@ -1,3 +1,5 @@
+<img width="1100" height="723" alt="image" src="https://github.com/user-attachments/assets/90c5acbd-81f5-4bd8-9490-cfa9583274ed" />
+
 # vlm-scene-graph
 
 **Open-vocabulary video scene graphs from a local VLM (Qwen2.5-VL)** — no hand-defined object classes, no predicate rules. The VLM produces `(subject, predicate, object)` triples directly, which are assembled into a graph and reduced to a compact feature vector. Ships with a caption/embedding baseline and a resumable batch runner built for large corpora.
@@ -14,7 +16,7 @@
 
 Classic scene graph generation needs a **fixed vocabulary** — a closed set of object and predicate classes you have to curate and train against. This project skips that entirely: a capable vision-language model emits open-vocabulary triples from a prompt, so the "ontology" lives in instructions, not a schema. If the model can see it, it can describe it.
 
-The output — structured, queryable "who-did-what-to-whom" — is a general-purpose primitive useful for semantic video search, content moderation, robotics/embodied perception, VQA, summarization, activity analysis, accessibility, corpus analytics, and as features for a downstream model.
+The output — structured, queryable "object->action->object" — is a general-purpose primitive useful for semantic video search, content moderation, robotics/embodied perception, VQA, summarization, activity analysis, accessibility, corpus analytics, and as features for a downstream model.
 
 ## How it works
 
