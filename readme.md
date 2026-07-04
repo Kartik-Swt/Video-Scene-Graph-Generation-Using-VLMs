@@ -27,60 +27,17 @@ select_keyframes()          cheap, no model — scene-change detection.
    ▼
 vlm.generate()              one VLM call per video, all keyframes as a "video"
    │
-   ├─► SCENE_GRAPH_PROMPT ─► parse JSON ─► triples ─► nx.MultiDiGraph ─► features   (Path C)
-   │
-   └─► CAPTION_PROMPT     ─► caption ─► sentence embedding                          (Path B)
+   ├─► SCENE_GRAPH_PROMPT ─► parse JSON ─► triples ─► nx.MultiDiGraph ─► features
 ```
 
-- **Path C** — the salient, sparse scene graph (the main output).
-- **Path B** — a caption + embedding baseline, so you can measure whether the structured graph actually beats a plain caption for *your* task.
-
-Design choices that matter at scale: keyframe selection to minimize VLM calls, multi-frame-per-call reasoning, defensively-parsed strict JSON, and a **resumable** runner that writes one JSON per video and skips completed work on re-run.
-
-## Install
-
-Core pipeline (plumbing + mock backend, **no GPU required**):
-
-```bash
-pip install -e .
-# or: pip install -r requirements.txt
-```
-
-Real Qwen2.5-VL backend (GPU). Install `torch` first, matched to your CUDA version (see pytorch.org):
-
-```bash
-pip install -e ".[gpu,embed]"
-# or: pip install -r requirements-gpu.txt
-# optional speedup: pip install flash-attn --no-build-isolation
-```
-
-## Quickstart (no GPU)
-
-The pipeline depends on a `VLMBackend` *interface*, not a specific model, so you can run everything with a bundled mock backend:
-
-```python
-from vlm_scene_graph import build_scene_graph, scene_graph_features, MockVLM
-
-sg = build_scene_graph("your_video.mp4", MockVLM(), max_frames=8)
-print(sg["summary"])
-print(sg["triples"])
-print(scene_graph_features(sg["graph"]))
-```
-
-Or run the bundled example:
-
-```bash
-python examples/quickstart.py your_video.mp4
-```
-
-## Real usage (GPU)
+## Usage
 
 ```python
 from vlm_scene_graph import QwenVLBackend, run_pipeline
 from sentence_transformers import SentenceTransformer
 import pandas as pd
 
-df = pd.read_parquet("data.parquet")   # needs an id column + a video-path column
+df = pd.read_csv("data.csv")   # needs an id column + a video-path column
 vlm = QwenVLBackend("Qwen/Qwen2.5-VL-7B-Instruct", device="cuda")
 embedder = SentenceTransformer("all-MiniLM-L6-v2")
 
@@ -118,42 +75,3 @@ feats = run_pipeline(
 | `avg_salience`, `max_salience` | model confidence in importance |
 | `top_predicate` | dominant action |
 
-All are guarded against empty graphs (a video with no detected triples yields an all-zero row, not a crash).
-
-## The `VLMBackend` interface
-
-Any object with this method is a valid backend:
-
-```python
-def generate(self, frames_bgr: list[np.ndarray], prompt: str,
-             max_new_tokens: int = 512) -> str: ...
-```
-
-This is why the whole pipeline is testable without a GPU: `MockVLM` returns canned JSON and everything else (keyframes, parsing, graph build, features, batch runner) runs on a laptop. Swap in `QwenVLBackend` — or your own backend for a different VLM — without touching the pipeline.
-
-## Tests
-
-```bash
-pip install -e ".[dev]"
-pytest
-```
-
-The test suite runs entirely on the mock backend — no GPU, no model download.
-
-## Project layout
-
-```
-vlm_scene_graph/
-  core.py           keyframes, backends, prompts, JSON parsing, graph build, features
-  batch_runner.py   resumable DataFrame runner + visualization
-  mock_backend.py   GPU-free backend for tests/demos
-examples/
-  quickstart.py     single-video walkthrough
-  run_batch.py      DataFrame batch walkthrough
-tests/
-  test_pipeline.py  parsing / graph / features via the mock
-```
-
-## License
-
-MIT — see [LICENSE](LICENSE).
